@@ -1,0 +1,9 @@
+project
+ --> main.go ( 서버 실행 )
+ --> handler (핸들러 구현)
+   --> handler.go
+   --> middleware.go
+   --> spa-handler.go
+ --> model (model 정의)
+   --> model.go
+=======================
