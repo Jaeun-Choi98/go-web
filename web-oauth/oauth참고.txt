@@ -1,0 +1,21 @@
+<oauth 동작 흐름 - Athorization Code Grant 방식>
+1. client → (login 요청) → 서버
+2. 서버 → (token 요청 {configuration callback url, id, secretkey}) → oauth server
+3. client → ( login ) → oauth server
+4. oauth server → (Athorization code 응답 {using callback url}) → 서버
+5. 서버 → ( token을 요청 {using Athorization code} ) → oauth server
+6. 서버 → ( api 요청 {using token} ) → oauth server  // token에는 acess token과 refresh 토큰을 가지고 있음. 
+// acess token은 api 요청 시 사용되는 토큰
+// token이 만료되면, refresh token을 사용해서 재발급
+
+<dependancy, go.mod>
+cloud.google.com/go v0.119.0 // indirect
+golang.org/x/oauth2 v0.28.0 // indirect
+
+[참고 문서](https://developers.google.com/identity/protocols/oauth2/javascript-implicit-flow?hl=ko#oauth-2.0-endpoints)
+
+Athorization Code Grant: 사용자가 login 하면 Code 가 발급되고 이 Code로 Access Token을 발급받는다.
+Implicit Grant : 사용자가 login 하면 바로 Access Token이 발급된다.
+Client Credentials: User 를 인증하는것이 아니라 Client 를 인증하여 Access Token을 발급한다.
+Password Grant: 사용자 login 정보 + client secrete 까지 모든 정보로 요청해서 한번에 Access Token을 발급받는다.
+
