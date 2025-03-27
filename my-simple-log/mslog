@@ -1,0 +1,17 @@
+my-simple-log is started: 2025-03-27 14:28:37.4596701 +0900 KST m=+0.001011001
+interval time: 5 sec
+interval time: 10 sec
+interval time: 15 sec
+interval time: 20 sec
+interval time: 25 sec
+shut down( my-simple-log ): 2025-03-27 14:29:03.7226043 +0900 KST m=+26.263945201
+my-simple-log is started: 2025-03-27 14:29:16.7226125 +0900 KST m=+0.001008401
+interval time: 5 sec
+interval time: 10 sec
+interval time: 15 sec
+interval time: 20 sec
+interval time: 25 sec
+interval time: 30 sec
+interval time: 35 sec
+interval time: 40 sec
+shut down( my-simple-log ): 2025-03-27 14:29:58.4609606 +0900 KST m=+41.739356501
