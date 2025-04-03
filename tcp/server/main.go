@@ -47,7 +47,7 @@ func main() {
 		close(signChan)
 	}()
 
-	// SendMessage gorutine을 닫기 위한 동기화
+	// SendMessage goroutine을 닫기 위한 동기화
 	wg.Add(1)
 	go SendMessage(ctx)
 
@@ -65,7 +65,7 @@ func main() {
 			}
 			continue
 		}
-		// HandleConnection gorutine을 닫기 위한 동기화
+		// HandleConnection goroutine을 닫기 위한 동기화
 		wg.Add(1)
 		go HandleConnection(ctx, conn)
 	}
@@ -76,7 +76,7 @@ func HandleConnection(ctx context.Context, conn net.Conn) {
 	client := &Client{conn: conn}
 	defer func() {
 		conn.Close()
-		// 정상 종료 시에 HandleConnection gorutine이 제대로 닫히는지 확인
+		// 정상 종료 시에 HandleConnection goroutine이 제대로 닫히는지 확인
 		log.Println("closed HandleConnection goruntine")
 		wg.Done()
 	}()
@@ -198,7 +198,7 @@ func SendMessage(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			// 정상 종료 시에 SendMessage gorutine이 제대로 닫히는지 확인.
+			// 정상 종료 시에 SendMessage goroutine이 제대로 닫히는지 확인.
 			log.Println("closed SendMessage goruntine")
 			wg.Done()
 			return
