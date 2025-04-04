@@ -10,7 +10,9 @@ import (
 	"net"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -108,6 +110,14 @@ func main() {
 	}
 
 	recoverTimeInterval := 2 * time.Second
+
+	// graceful shut down...
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-signalChan
+		pcancel()
+	}()
 
 	connect()
 	// Recovery 시도
