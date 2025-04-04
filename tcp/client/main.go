@@ -111,7 +111,7 @@ func main() {
 
 	recoverTimeInterval := 2 * time.Second
 
-	// graceful shut down...
+	//graceful shut down...
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -126,6 +126,7 @@ func main() {
 		if recoveryCnt >= 5 {
 			log.Println("Failed to recover connect")
 			pcancel()
+			break
 		}
 		select {
 		case <-time.After(recoverTimeInterval):
