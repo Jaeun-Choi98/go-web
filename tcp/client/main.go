@@ -2,11 +2,13 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"juchoi/tcp/model/message"
 	"log"
 	"net"
+	_ "net/http/pprof"
 	"os"
 	"strings"
 	"time"
@@ -18,48 +20,122 @@ can make console ui using 'tview'
 
 func main() {
 
-	conn, err := net.DialTimeout("tcp", "localhost:5000", time.Second*5)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer conn.Close()
-	reader := bufio.NewReader(os.Stdin)
+	// go func() {
+	// 	http.ListenAndServe("0.0.0.0:6060", nil)
+	// }()
 
-	fmt.Print("Your Name: ")
-	line, _ := reader.ReadString('\n')
-	checkMsg := message.Message{
-		Type: "CHECK_TYPE",
-		Payload: &message.CheckPayload{
-			Name: strings.TrimSpace(line),
-		},
-	}
-	err = SendMessage(conn, checkMsg)
-	if err != nil {
-		log.Println(err)
-	}
+	pctx, pcancel := context.WithCancel(context.Background())
+	defer pcancel()
 
-	go ReceiveMessage(conn)
+	// require modifying, bad code
+	bufioReaderReadStringBreak := make(chan struct{}, 1)
+	defer close(bufioReaderReadStringBreak)
 
-	for {
-		line, _ := reader.ReadString('\n')
-		chatMsg := message.Message{
-			Type: "CHAT_MESSAGE_TPYE",
-			Payload: &message.ChatMsgPayload{
-				Message: strings.TrimSpace(line),
-			},
+	waitForSendMessage := func(conn net.Conn, ctx context.Context) {
+		reader := bufio.NewReader(os.Stdin)
+		sendMsgChan := make(chan message.Message, 5)
+		defer func() {
+			close(sendMsgChan)
+			log.Println("closed waitForSendMessage")
+			// require modifying, bad code
+			bufioReaderReadStringBreak <- struct{}{}
+		}()
+
+		for {
+			go func() {
+				line, err := reader.ReadString('\n')
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				chatMsg := message.Message{
+					Type: "CHAT_MESSAGE_TPYE",
+					Payload: &message.ChatMsgPayload{
+						Message: strings.TrimSpace(line),
+					},
+				}
+				// require modifying, bad code
+				select {
+				case <-bufioReaderReadStringBreak:
+					log.Println("closed bufioReaderReadString block")
+					return
+				default:
+				}
+				sendMsgChan <- chatMsg
+			}()
+
+			select {
+			case <-ctx.Done():
+				return
+			case data := <-sendMsgChan:
+				err := SendMessage(conn, data)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			}
 		}
-		err := SendMessage(conn, chatMsg)
+	}
+
+	connect := func() {
+		reader := bufio.NewReader(os.Stdin)
+		ctx, cancel := context.WithCancel(pctx)
+		defer func() {
+			cancel()
+			log.Println("closed connect")
+		}()
+		conn, err := net.DialTimeout("tcp", "localhost:5000", time.Second*5)
 		if err != nil {
 			log.Println(err)
+			return
+		}
+		defer conn.Close()
+		// require modifying, bad code
+		fmt.Print("If it's recovery connection, push Enter Before write your name\nYour Name: ")
+		line, _ := reader.ReadString('\n')
+		checkMsg := message.Message{
+			Type: "CHECK_TYPE",
+			Payload: &message.CheckPayload{
+				Name: strings.TrimSpace(line),
+			},
+		}
+		err = SendMessage(conn, checkMsg)
+		if err != nil {
+			log.Println(err)
+		}
+		go ReceiveMessage(conn, cancel)
+		waitForSendMessage(conn, ctx)
+	}
+
+	recoverTimeInterval := 2 * time.Second
+
+	connect()
+	// Recovery 시도
+	recoveryCnt := 0
+	for {
+		if recoveryCnt >= 5 {
+			log.Println("Failed to recover connect")
+			pcancel()
+		}
+		select {
+		case <-time.After(recoverTimeInterval):
+			connect()
+			recoveryCnt++
+		case <-pctx.Done():
+			return
 		}
 	}
 }
 
-func ReceiveMessage(conn net.Conn) {
+func ReceiveMessage(conn net.Conn, cancel context.CancelFunc) {
 	reader := bufio.NewReader(conn)
 	for {
-		line, _ := reader.ReadString('\n')
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			log.Println(err)
+			cancel()
+			return
+		}
 		fmt.Print(line)
 
 	}

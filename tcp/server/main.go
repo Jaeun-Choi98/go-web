@@ -27,6 +27,11 @@ var messageChan = make(chan string, 10)
 var wg sync.WaitGroup
 
 func main() {
+
+	// go func() {
+	// 	http.ListenAndServe("0.0.0.0:6060", nil)
+	// }()
+
 	listener, err := net.Listen("tcp", ":5000")
 	if err != nil {
 		log.Println(err)
@@ -99,7 +104,7 @@ func HandleConnection(ctx context.Context, conn net.Conn) {
 				break
 			}
 			client.name = payload.GetPayload()
-			messageChan <- fmt.Sprintf("welcome %s\n", client.name)
+			messageChan <- fmt.Sprintf("welcome [%s]\n", client.name)
 			/*
 				type이 interface{}인 경우, 역직렬화 시 map[string]interface{}로 변환(conversion)된다.
 				아래 코드처럼 해도 되지만, 필드가 여러 개일 경우 위의 방법이 더 편리함.
